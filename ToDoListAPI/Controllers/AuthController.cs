@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ToDoListAPI.DTOs.Auth;
 using ToDoListAPI.Services.Interface;
@@ -7,9 +7,9 @@ namespace ToDoListAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class AuthController : ControllerBase
     {
-
         private readonly IAuthService _authService;
 
         public AuthController(IAuthService authService)

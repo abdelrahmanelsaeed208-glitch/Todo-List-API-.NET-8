@@ -1,0 +1,16 @@
+# Visual Studio
+.vs/
+
+# Build output
+bin/
+obj/
+
+# User-specific project files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Environment and local secrets
+.env
+*.Development.local.json

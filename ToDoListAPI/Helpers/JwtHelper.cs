@@ -19,6 +19,8 @@ namespace ToDoListAPI.Helpers
 
         public string GenerateToken(IdentityUser user)
         {
+            var durationInDays = _configuration.GetValue("Jwt:DurationInDays", 30);
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -35,7 +37,7 @@ namespace ToDoListAPI.Helpers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],  
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
+                expires: DateTime.UtcNow.AddDays(durationInDays),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using Org.BouncyCastle.Crypto;
-//using System.Linq.Dynamic.Core;
+using AutoMapper;
 using ToDoListAPI.Common;
 using ToDoListAPI.DTOs.Todo;
 using ToDoListAPI.Models;
@@ -36,9 +34,9 @@ namespace ToDoListAPI.Services
         public async Task<PagedResult<TodoDto>> GetAllAsync(string userId, TodoPagination query)
         {
             var todos = await _todoRepository.GetAllAsync(userId, query);
-            var dtos = _mapper.Map<List<TodoDto>>(todos.CurrentPage);
+            var dtos = _mapper.Map<List<TodoDto>>(todos.Data);
 
-            return new PagedResult<TodoDto>(dtos, query.Page,query.Limit );
+            return new PagedResult<TodoDto>(dtos, todos.Total, todos.Page, todos.Limit);
         }
 
         public async Task<Result<TodoDto>> UpdateAsync(int id, UpdateTodoDto dto, string userId)
@@ -65,6 +63,4 @@ namespace ToDoListAPI.Services
             return Result.Success();
         }
     }
-    }
-
-
+}

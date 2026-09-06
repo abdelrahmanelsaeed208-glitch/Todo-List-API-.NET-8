@@ -1,11 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Linq.Dynamic.Core;
+using Microsoft.EntityFrameworkCore;
+using ToDoListAPI.Common;
 using ToDoListAPI.Data;
 using ToDoListAPI.DTOs.Todo;
 using ToDoListAPI.Models;
 using ToDoListAPI.Repositories.Interfaces;
-//using ToDoListAPI.Common;
-
 
 namespace ToDoListAPI.Repositories
 {
@@ -26,9 +24,14 @@ namespace ToDoListAPI.Repositories
 
         public async Task<PagedResult<Todo>> GetAllAsync(string userId, TodoPagination query)
         {
-            var q = _context.Todos.Where(t => t.UserId == userId);
+            var page = Math.Max(query.Page, 1);
+            var limit = Math.Clamp(query.Limit, 1, 100);
 
-            if (!string.IsNullOrEmpty(query.Search))
+            var q = _context.Todos
+                .AsNoTracking()
+                .Where(t => t.UserId == userId);
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
                 q = q.Where(t => t.Title.Contains(query.Search) ||
                                 (t.Description != null && t.Description.Contains(query.Search)));
 
@@ -39,12 +42,11 @@ namespace ToDoListAPI.Repositories
 
             var items = await q
                 .OrderByDescending(t => t.CreatedAt)
-                .Skip((query.Page - 1) * query.Limit)
-                .Take(query.Limit)
+                .Skip((page - 1) * limit)
+                .Take(limit)
                 .ToListAsync();
 
-            return new PagedResult<Todo>();
-            
+            return new PagedResult<Todo>(items, totalCount, page, limit);
         }
 
         public async Task AddAsync(Todo todo)
@@ -64,6 +66,5 @@ namespace ToDoListAPI.Repositories
             _context.Todos.Remove(todo);
             await _context.SaveChangesAsync();
         }
-
     }
 }

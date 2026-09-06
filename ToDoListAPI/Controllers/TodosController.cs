@@ -1,16 +1,14 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using ToDoListAPI.Data;
-using ToDoListAPI.DTOs;
 using ToDoListAPI.DTOs.Todo;
-using ToDoListAPI.Models;
 using ToDoListAPI.Services.Interface;
 
 namespace ToDoListAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class TodosController : ControllerBase
     {
         private readonly ITodoService _todoService;
@@ -28,7 +26,7 @@ namespace ToDoListAPI.Controllers
             return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] TodoPagination query)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -36,7 +34,7 @@ namespace ToDoListAPI.Controllers
             return Ok(result);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTodoDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -44,7 +42,7 @@ namespace ToDoListAPI.Controllers
             return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -52,13 +50,4 @@ namespace ToDoListAPI.Controllers
             return result.IsSuccess ? NoContent() : BadRequest(result.Error);
         }
     }
-
-
-
-
-
-
 }
-
-
-

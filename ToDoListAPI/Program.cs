@@ -1,24 +1,26 @@
-using FluentValidation;
-//using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using ToDoListAPI.Data;
-using ToDoListAPI.DTOs.Todo;
 using ToDoListAPI.Helpers;
 using ToDoListAPI.Mapping;
-using ToDoListAPI.Models;
 using ToDoListAPI.Repositories;
 using ToDoListAPI.Repositories.Interfaces;
 using ToDoListAPI.Services;
 using ToDoListAPI.Services.Interface;
-using ToDoListAPI.Validators;
+
+DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException("JWT key is missing. Configure Jwt:Key with user secrets or an environment variable.");
+}
 
 // ================== Database ==================
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -28,8 +30,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
-
-
 
 // ================== JWT Authentication ==================
 builder.Services.AddAuthentication(options =>
@@ -47,11 +47,10 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 });
-
+builder.Services.AddAuthorization();
 
 // ================== Services & Helpers ==================
 builder.Services.AddScoped<JwtHelper>();
@@ -60,24 +59,42 @@ builder.Services.AddScoped<ITodoService, TodoService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITodoRepository, TodoRepository>();
 
-// ================== Validation ==================
-
-
-
-
-
 builder.Services.AddAutoMapper(config=> {
     config.AddProfile<MappingProfile>();
 });
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter a JWT bearer token."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -86,7 +103,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-/*app.UseAuthentication()*/;
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

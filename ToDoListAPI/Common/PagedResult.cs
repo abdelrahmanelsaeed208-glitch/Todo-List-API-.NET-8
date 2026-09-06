@@ -8,12 +8,13 @@
         public int Total { get; set; }
         public int TotalPages { get; set; }
 
-        public PagedResult(List<T> data, int totalCount, int page)
+        public PagedResult(List<T> data, int totalCount, int page, int limit)
         {
             Data = data;
             Total = totalCount;
             Page = page;
-            
+            Limit = limit;
+            TotalPages = limit <= 0 ? 0 : (int)Math.Ceiling(totalCount / (double)limit);
         }
     }
 }
